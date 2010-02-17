@@ -29,6 +29,30 @@
 
 #import "AnimatedGif.h"
 
+@implementation AnimatedGifFrame
+
+@synthesize data, delay, disposalMethod, area, header, transparentColorIndex, backgroundColor;
+
+- (id) init
+{
+	self = [super init];
+	if (self != nil) {
+		transparentColorIndex = -1;
+	}
+	return self;
+}
+
+- (void) dealloc
+{
+	[data release];
+	[header release];
+	[backgroundColor release];
+	[super dealloc];
+}
+
+
+@end
+
 @implementation AnimatedGif
 
 static AnimatedGif * instance;
@@ -94,22 +118,12 @@ static AnimatedGif * instance;
         [GIF_screen release];
     }
     
-	if (GIF_delays != nil)
-    {
-        [GIF_delays release];
-    }
-    
-    if (GIF_framesData != nil)
-    {
-        [GIF_framesData release];
-    }
-        
+	[GIF_frames release];
+	
     GIF_buffer = [[NSMutableData alloc] init];
 	GIF_global = [[NSMutableData alloc] init];
 	GIF_screen = [[NSMutableData alloc] init];
-	
-	GIF_delays = [[NSMutableArray alloc] init];
-	GIF_framesData = [[NSMutableArray alloc] init];
+	GIF_frames = [[NSMutableArray alloc] init];
 	
     // Reset file counters to 0 //
 	dataPointer = 0;
@@ -126,6 +140,8 @@ static AnimatedGif * instance;
     int length = [GIF_buffer length];
 	unsigned char aBuffer[length];
 	[GIF_buffer getBytes:aBuffer length:length];
+	
+	backgroundColorIndex = aBuffer[5];
 	
 	if (aBuffer[4] & 0x80) GIF_colorF = 1; else GIF_colorF = 0; 
 	if (aBuffer[4] & 0x08) GIF_sorted = 1; else GIF_sorted = 0;
@@ -179,11 +195,11 @@ static AnimatedGif * instance;
 // Returns nil when frame does not exist.
 //
 // Use this to write a subframe to the filesystems (cache etc);
-- (NSMutableData*) getFrameAsDataAtIndex:(int)index
+- (NSData*) getFrameAsDataAtIndex:(int)index
 {
-	if (index < [GIF_framesData count])
+	if (index < [GIF_frames count])
 	{
-		return [GIF_framesData objectAtIndex:index];
+		return ((AnimatedGifFrame *)[GIF_frames objectAtIndex:index]).data;
 	}
 	else
 	{
@@ -219,7 +235,7 @@ static AnimatedGif * instance;
 // an autorelease UIImageView* with the animation.
 - (UIImageView*) getAnimation
 {
-	if ([GIF_framesData count] > 0)
+	if ([GIF_frames count] > 0)
 	{
         if (imageView != nil)
         {
@@ -235,19 +251,60 @@ static AnimatedGif * instance;
 		
 		// Add all subframes to the animation
 		NSMutableArray *array = [[NSMutableArray alloc] init];
-		for (int i = 0; i < [GIF_framesData count]; i++)
+		for (int i = 0; i < [GIF_frames count]; i++)
 		{		
 			[array addObject: [self getFrameAsImageAtIndex:i]];
 		}
 		
-		[imageView setAnimationImages:array];
+		NSMutableArray *overlayArray = [[NSMutableArray alloc] init];
+		UIImage *firstImage = [array objectAtIndex:0];
+		CGSize size = firstImage.size;
+		CGRect rect = CGRectZero;
+		rect.size = size;
+		
+		UIGraphicsBeginImageContext(size);
+		CGContextRef ctx = UIGraphicsGetCurrentContext();
+        CGContextScaleCTM(ctx, 1.0, -1.0);
+        CGContextTranslateCTM(ctx, 0.0, -size.height);
+		
+		int i = 0;
+		int disposalMethod = 0;
+		for (UIImage *image in array) {
+			AnimatedGifFrame *frame = [GIF_frames objectAtIndex:i];
+			switch (disposalMethod) {
+				case 1:
+					// Do not dispose
+					break;
+				case 2:
+					// Restore to background color
+					if (frame.transparentColorIndex >= 0 && 
+						frame.transparentColorIndex == backgroundColorIndex) {
+						CGContextClearRect(ctx, frame.area);
+					} else {
+						CGContextSetFillColorWithColor(ctx, [frame.backgroundColor CGColor]);
+						CGContextFillRect(ctx, frame.area);
+					}
+					break;
+				case 3:
+					// TODO Restore to previous
+					break;
+			}
+			CGContextDrawImage(ctx, rect, image.CGImage);
+			[overlayArray addObject:UIGraphicsGetImageFromCurrentImageContext()];
+			disposalMethod = frame.disposalMethod;
+			i++;
+		}
+		UIGraphicsEndImageContext();
+		
+		[imageView setAnimationImages:overlayArray];
+		
+		[overlayArray release];
         [array release];
 		
 		// Count up the total delay, since Cocoa doesn't do per frame delays.
 		double total = 0;
-		for (int i = 0; i < [GIF_delays count]; i++)
-		{
-			total += [[GIF_delays objectAtIndex:i] doubleValue];
+		for (AnimatedGifFrame *frame in GIF_frames) {
+			total += frame.delay;
 		}
 		
 		// GIFs store the delays as 1/100th of a second,
@@ -284,28 +341,36 @@ static AnimatedGif * instance;
 		if (cur[0] == 0x04 && prev[0] == 0xF9)
 		{
 			[self GIFGetBytes:5];
-            
+
+			AnimatedGifFrame *frame = [[AnimatedGifFrame alloc] init];
+			
 			unsigned char buffer[5];
 			[GIF_buffer getBytes:buffer length:5];
+			frame.disposalMethod = (buffer[0] & 0x1c) >> 2;
+			BOOL transparent = buffer[0] & 0x01;
+			NSLog(@"flags=%x, dm=%x", (int)(buffer[0]), frame.disposalMethod);
 			
 			// We save the delays for easy access.
-			[GIF_delays addObject:[NSNumber numberWithInt:(buffer[1] | buffer[2] << 8)]];
-						
-			if (GIF_frameHeader == nil)
-			{
-			    unsigned char board[8];
-				board[0] = 0x21;
-				board[1] = 0xF9;
-				board[2] = 0x04;
-				
-				for(int i = 3, a = 0; a < 5; i++, a++)
-				{
-					board[i] = buffer[a];
-				}
-                
-				GIF_frameHeader = [NSMutableData dataWithBytes:board length:8];
+			frame.delay = (buffer[1] | buffer[2] << 8);
+			
+			if (transparent) {
+				frame.transparentColorIndex = (int)buffer[3];
 			}
+			
+			unsigned char board[8];
+			board[0] = 0x21;
+			board[1] = 0xF9;
+			board[2] = 0x04;
+			
+			for(int i = 3, a = 0; a < 5; i++, a++)
+			{
+				board[i] = buffer[a];
+			}
+			
+			frame.header = [NSData dataWithBytes:board length:8];
             
+			[GIF_frames addObject:frame];
+			[frame release];
 			break;
 		}
 		
@@ -324,6 +389,15 @@ static AnimatedGif * instance;
 	
 	unsigned char aBuffer[9];
 	[GIF_buffer getBytes:aBuffer length:9];
+	
+	CGRect rect;
+	rect.origin.x = ((int)aBuffer[1] << 8) | aBuffer[0];
+	rect.origin.y = ((int)aBuffer[3] << 8) | aBuffer[2];
+	rect.size.width = ((int)aBuffer[5] << 8) | aBuffer[4];
+	rect.size.height = ((int)aBuffer[7] << 8) | aBuffer[6];
+
+	AnimatedGifFrame *frame = [GIF_frames lastObject];
+	frame.area = rect;
 	
 	if (aBuffer[8] & 0x80) GIF_colorF = 1; else GIF_colorF = 0;
 	
@@ -366,21 +440,27 @@ static AnimatedGif * instance;
     NSMutableData *GIF_string = [NSMutableData dataWithData:[[NSString stringWithString:@"GIF89a"] dataUsingEncoding: NSUTF8StringEncoding]];
 	[GIF_screen setData:[NSData dataWithBytes:bBuffer length:blength]];
     [GIF_string appendData: GIF_screen];
-	
-	
+
+	NSData *colorTable;
 	if (GIF_colorF == 1)
     {
 		[self GIFGetBytes:(3 * GIF_size)];
-        [GIF_string appendData: GIF_buffer];
+		colorTable = GIF_buffer;
 	}
     else
     {
-        
-		[GIF_string appendData: GIF_global];
+        colorTable = GIF_global;
 	}
+	unsigned char bgColorBuffer[3];
+	[colorTable getBytes:bgColorBuffer range:NSMakeRange(backgroundColorIndex * 3, 3)];
+	frame.backgroundColor = [UIColor colorWithRed:(float)bgColorBuffer[0] / 255
+											green:(float)bgColorBuffer[1] / 255
+											 blue:(float)bgColorBuffer[2] / 255
+											alpha:1];
+	[GIF_string appendData:colorTable];
 	
 	// Add Graphic Control Extension Frame (for transparancy)
-	[GIF_string appendData:GIF_frameHeader];
+	[GIF_string appendData:frame.header];
 	
 	char endC = 0x2c;
 	[GIF_string appendBytes:&endC length:sizeof(endC)];
@@ -423,7 +503,7 @@ static AnimatedGif * instance;
 	[GIF_string appendBytes:&endC length:sizeof(endC)];
 	
 	// save the frame into the array of frames
-	[GIF_framesData addObject:[GIF_string copy]];
+	frame.data = GIF_string;
 }
 
 /* Puts (int) length into the GIF_buffer from file, returns whether read was succesfull */
@@ -479,15 +559,7 @@ static AnimatedGif * instance;
         [GIF_global release];
     }
     
-    if (GIF_delays != nil)
-    {
-		[GIF_delays release];
-    }
-    
-    if (GIF_framesData != nil)
-    {
-		[GIF_framesData release];
-    }
+	[GIF_frames release];
 
 	[super dealloc];
 }

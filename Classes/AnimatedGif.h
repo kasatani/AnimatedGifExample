@@ -33,22 +33,40 @@
 #import <Cocoa/Cocoa.h>
 #endif TARGET_OS_IPHONE	
 
+@interface AnimatedGifFrame : NSObject
+{
+	NSData *data;
+	NSData *header;
+	double delay;
+	int disposalMethod;
+	CGRect area;
+	int transparentColorIndex;
+	UIColor *backgroundColor;
+}
+
+@property (nonatomic, copy) NSData *header;
+@property (nonatomic, copy) NSData *data;
+@property (nonatomic) double delay;
+@property (nonatomic) int disposalMethod;
+@property (nonatomic) int transparentColorIndex;
+@property (nonatomic) CGRect area;
+@property (nonatomic, retain) UIColor *backgroundColor;
+
+@end
+
 @interface AnimatedGif : NSObject {
 	NSData *GIF_pointer;
 	NSMutableData *GIF_buffer;
 	NSMutableData *GIF_screen;
 	NSMutableData *GIF_global;
-	NSMutableData *GIF_frameHeader;
-	
-	NSMutableArray *GIF_delays;
-	NSMutableArray *GIF_framesData;
+	NSMutableArray *GIF_frames;
 
-	
 	int GIF_sorted;
 	int GIF_colorS;
 	int GIF_colorC;
 	int GIF_colorF;
 	int animatedGifDelay;
+	int backgroundColorIndex;
 	
 	int dataPointer;
 	int frameCounter;
@@ -64,7 +82,7 @@
 - (void) GIFReadDescriptor;
 - (bool) GIFGetBytes:(int)length;
 - (bool) GIFSkipBytes: (int) length;
-- (NSMutableData*) getFrameAsDataAtIndex:(int)index;
+- (NSData*) getFrameAsDataAtIndex:(int)index;
 - (UIImage*) getFrameAsImageAtIndex:(int)index;
 - (UIImageView*) getAnimation;
 
