@@ -268,30 +268,32 @@ static AnimatedGif * instance;
         CGContextTranslateCTM(ctx, 0.0, -size.height);
 		
 		int i = 0;
-		int disposalMethod = 0;
+		AnimatedGifFrame *lastFrame = nil;
 		for (UIImage *image in array) {
 			AnimatedGifFrame *frame = [GIF_frames objectAtIndex:i];
-			switch (disposalMethod) {
-				case 1:
-					// Do not dispose
-					break;
-				case 2:
-					// Restore to background color
-					if (frame.transparentColorIndex >= 0 && 
-						frame.transparentColorIndex == backgroundColorIndex) {
-						CGContextClearRect(ctx, frame.area);
-					} else {
-						CGContextSetFillColorWithColor(ctx, [frame.backgroundColor CGColor]);
-						CGContextFillRect(ctx, frame.area);
-					}
-					break;
-				case 3:
-					// TODO Restore to previous
-					break;
+			if (lastFrame) {
+				switch (lastFrame.disposalMethod) {
+					case 1:
+						// Do not dispose
+						break;
+					case 2:
+						// Restore to background color
+						if (frame.transparentColorIndex >= 0 && 
+							frame.transparentColorIndex == backgroundColorIndex) {
+							CGContextClearRect(ctx, lastFrame.area);
+						} else {
+							CGContextSetFillColorWithColor(ctx, [frame.backgroundColor CGColor]);
+							CGContextFillRect(ctx, lastFrame.area);
+						}
+						break;
+					case 3:
+						// TODO Restore to previous
+						break;
+				}
 			}
 			CGContextDrawImage(ctx, rect, image.CGImage);
 			[overlayArray addObject:UIGraphicsGetImageFromCurrentImageContext()];
-			disposalMethod = frame.disposalMethod;
+			lastFrame = frame;
 			i++;
 		}
 		UIGraphicsEndImageContext();
@@ -315,7 +317,7 @@ static AnimatedGif * instance;
 		[imageView setAnimationRepeatCount:0];
 		
         [imageView startAnimating];
-        //[imageView autorelease];
+        [[imageView retain] autorelease];
         
 		return imageView;
 	}
