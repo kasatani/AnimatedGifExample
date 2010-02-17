@@ -315,7 +315,7 @@ static AnimatedGif * instance;
 		[imageView setAnimationRepeatCount:0];
 		
         [imageView startAnimating];
-        [imageView autorelease];
+        //[imageView autorelease];
         
 		return imageView;
 	}
@@ -560,6 +560,8 @@ static AnimatedGif * instance;
     }
     
 	[GIF_frames release];
+	
+	[imageView release];
 
 	[super dealloc];
 }
