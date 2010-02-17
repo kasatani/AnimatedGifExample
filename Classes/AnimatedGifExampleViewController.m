@@ -26,7 +26,7 @@
     //NSURL * url = [NSURL URLWithString:@"http://www.gifs.net/Animation11/Food_and_Drinks/Fruits/Apple_jumps.gif"];
     
     // Magic line
-    UIImageView * animation = [AnimatedGif getAnimationForGifAtUrl: url];
+    animation = [AnimatedGif getAnimationForGifAtUrl: url];
     
     // Add it to the view.
 	[theAnimatedGif addSubview:animation];
@@ -37,6 +37,18 @@
 	// Releases the view if it doesn't have a superview.
 
     [super didReceiveMemoryWarning];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+	NSURL *url = [NSURL URLWithString:textField.text];
+	if (url) {
+		[animation removeFromSuperview];
+		animation = [AnimatedGif getAnimationForGifAtUrl:url];
+		[theAnimatedGif addSubview:animation];
+	}
+	
+	[textField resignFirstResponder];
+	return YES;
 }
 
 @end
