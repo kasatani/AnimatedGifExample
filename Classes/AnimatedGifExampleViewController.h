@@ -9,10 +9,10 @@
 #import <UIKit/UIKit.h>
 #import "AnimatedGif.h"
 
-@interface AnimatedGifExampleViewController : UIViewController {
+@interface AnimatedGifExampleViewController : UIViewController <UITextFieldDelegate> {
 
 	IBOutlet UIImageView *theAnimatedGif;
-	
+	UIImageView *animation;
 }
 
 @end
