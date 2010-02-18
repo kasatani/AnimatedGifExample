@@ -31,22 +31,12 @@
 
 @implementation AnimatedGifFrame
 
-@synthesize data, delay, disposalMethod, area, header, transparentColorIndex, backgroundColor;
-
-- (id) init
-{
-	self = [super init];
-	if (self != nil) {
-		transparentColorIndex = -1;
-	}
-	return self;
-}
+@synthesize data, delay, disposalMethod, area, header;
 
 - (void) dealloc
 {
 	[data release];
 	[header release];
-	[backgroundColor release];
 	[super dealloc];
 }
 
@@ -140,8 +130,6 @@ static AnimatedGif * instance;
     int length = [GIF_buffer length];
 	unsigned char aBuffer[length];
 	[GIF_buffer getBytes:aBuffer length:length];
-	
-	backgroundColorIndex = aBuffer[5];
 	
 	if (aBuffer[4] & 0x80) GIF_colorF = 1; else GIF_colorF = 0; 
 	if (aBuffer[4] & 0x08) GIF_sorted = 1; else GIF_sorted = 0;
@@ -278,13 +266,7 @@ static AnimatedGif * instance;
 						break;
 					case 2:
 						// Restore to background color
-						if (frame.transparentColorIndex >= 0 && 
-							frame.transparentColorIndex == backgroundColorIndex) {
-							CGContextClearRect(ctx, lastFrame.area);
-						} else {
-							CGContextSetFillColorWithColor(ctx, [frame.backgroundColor CGColor]);
-							CGContextFillRect(ctx, lastFrame.area);
-						}
+						CGContextClearRect(ctx, lastFrame.area);
 						break;
 					case 3:
 						// TODO Restore to previous
@@ -349,15 +331,10 @@ static AnimatedGif * instance;
 			unsigned char buffer[5];
 			[GIF_buffer getBytes:buffer length:5];
 			frame.disposalMethod = (buffer[0] & 0x1c) >> 2;
-			BOOL transparent = buffer[0] & 0x01;
 			NSLog(@"flags=%x, dm=%x", (int)(buffer[0]), frame.disposalMethod);
 			
 			// We save the delays for easy access.
 			frame.delay = (buffer[1] | buffer[2] << 8);
-			
-			if (transparent) {
-				frame.transparentColorIndex = (int)buffer[3];
-			}
 			
 			unsigned char board[8];
 			board[0] = 0x21;
@@ -443,23 +420,15 @@ static AnimatedGif * instance;
 	[GIF_screen setData:[NSData dataWithBytes:bBuffer length:blength]];
     [GIF_string appendData: GIF_screen];
 
-	NSData *colorTable;
 	if (GIF_colorF == 1)
     {
 		[self GIFGetBytes:(3 * GIF_size)];
-		colorTable = GIF_buffer;
+		[GIF_string appendData:GIF_buffer];
 	}
     else
     {
-        colorTable = GIF_global;
+		[GIF_string appendData:GIF_global];
 	}
-	unsigned char bgColorBuffer[3];
-	[colorTable getBytes:bgColorBuffer range:NSMakeRange(backgroundColorIndex * 3, 3)];
-	frame.backgroundColor = [UIColor colorWithRed:(float)bgColorBuffer[0] / 255
-											green:(float)bgColorBuffer[1] / 255
-											 blue:(float)bgColorBuffer[2] / 255
-											alpha:1];
-	[GIF_string appendData:colorTable];
 	
 	// Add Graphic Control Extension Frame (for transparancy)
 	[GIF_string appendData:frame.header];

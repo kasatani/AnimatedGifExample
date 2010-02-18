@@ -40,17 +40,13 @@
 	double delay;
 	int disposalMethod;
 	CGRect area;
-	int transparentColorIndex;
-	UIColor *backgroundColor;
 }
 
 @property (nonatomic, copy) NSData *header;
 @property (nonatomic, copy) NSData *data;
 @property (nonatomic) double delay;
 @property (nonatomic) int disposalMethod;
-@property (nonatomic) int transparentColorIndex;
 @property (nonatomic) CGRect area;
-@property (nonatomic, retain) UIColor *backgroundColor;
 
 @end
 
@@ -66,7 +62,6 @@
 	int GIF_colorC;
 	int GIF_colorF;
 	int animatedGifDelay;
-	int backgroundColorIndex;
 	
 	int dataPointer;
 	int frameCounter;
