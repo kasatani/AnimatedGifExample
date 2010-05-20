@@ -374,7 +374,7 @@ static AnimatedGif * instance;
 			unsigned char buffer[5];
 			[GIF_buffer getBytes:buffer length:5];
 			frame.disposalMethod = (buffer[0] & 0x1c) >> 2;
-			NSLog(@"flags=%x, dm=%x", (int)(buffer[0]), frame.disposalMethod);
+			//NSLog(@"flags=%x, dm=%x", (int)(buffer[0]), frame.disposalMethod);
 			
 			// We save the delays for easy access.
 			frame.delay = (buffer[1] | buffer[2] << 8);
