@@ -10,9 +10,7 @@
 #import "AnimatedGif.h"
 
 @interface AnimatedGifExampleViewController : UIViewController <UITextFieldDelegate> {
-
-	IBOutlet UIImageView *theAnimatedGif;
-	UIImageView *animation;
+	UIImageView *remoteAnimationView;
 	IBOutlet UIImageView *theFirstAnimatedGif, *theSecondAnimatedGif;
 	
 }

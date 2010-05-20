@@ -71,11 +71,6 @@
 	NSMutableData *GIF_global;
 	NSMutableArray *GIF_frames;
 
-	NSMutableData *GIF_frameHeader;
-	
-	NSMutableArray *GIF_delays;
-	NSMutableArray *GIF_framesData;
-    
     NSMutableArray *imageQueue;
 	bool busyDecoding;
 	

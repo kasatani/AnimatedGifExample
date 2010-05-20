@@ -156,24 +156,6 @@ static AnimatedGif * instance;
 	GIF_global = [[NSMutableData alloc] init];
 	GIF_screen = [[NSMutableData alloc] init];
 	GIF_frames = [[NSMutableArray alloc] init];
-        
-	if (GIF_delays != nil)
-    {
-        [GIF_delays release];
-    }
-    
-    if (GIF_framesData != nil)
-    {
-        [GIF_framesData release];
-    }
-        
-    GIF_buffer = [[NSMutableData alloc] init];
-	GIF_global = [[NSMutableData alloc] init];
-	GIF_screen = [[NSMutableData alloc] init];
-	GIF_frameHeader = nil;
-    
-	GIF_delays = [[NSMutableArray alloc] init];
-	GIF_framesData = [[NSMutableArray alloc] init];
 	
     // Reset file counters to 0
 	dataPointer = 0;
