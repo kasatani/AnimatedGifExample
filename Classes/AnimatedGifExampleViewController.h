@@ -11,7 +11,7 @@
 
 @interface AnimatedGifExampleViewController : UIViewController {
 
-	IBOutlet UIImageView *theAnimatedGif;
+	IBOutlet UIImageView *theFirstAnimatedGif, *theSecondAnimatedGif;
 	
 }
 

@@ -19,18 +19,17 @@
 {
 	[super viewDidLoad];
     
-    // Local example
-    NSURL * url = [NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"apple_logo_animated" ofType:@"gif"]];
+    // First example, a local file
+    NSURL 			* firstUrl = 		[NSURL fileURLWithPath:[[NSBundle mainBundle] pathForResource:@"apple_logo_animated" ofType:@"gif"]];
+    UIImageView 	* firstAnimation = 	[AnimatedGif getAnimationForGifAtUrl: firstUrl];
     
-    // HTTP example..
-    //NSURL * url = [NSURL URLWithString:@"http://www.gifs.net/Animation11/Food_and_Drinks/Fruits/Apple_jumps.gif"];
+    // Second example, through HTTP
+    NSURL 		* secondUrl = 			[NSURL URLWithString:@"http://www.gifs.net/Animation11/Food_and_Drinks/Fruits/Apple_jumps.gif"];
+    UIImageView * secondAnimation = 	[AnimatedGif getAnimationForGifAtUrl: secondUrl];
     
-    // Magic line
-    UIImageView * animation = [AnimatedGif getAnimationForGifAtUrl: url];
-    
-    // Add it to the view.
-	[theAnimatedGif addSubview:animation];
-    
+    // Add them to the view.
+	[theFirstAnimatedGif addSubview:firstAnimation];
+	[theSecondAnimatedGif addSubview:secondAnimation];
 }
 
 - (void)didReceiveMemoryWarning {
