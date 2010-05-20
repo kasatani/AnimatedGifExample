@@ -293,8 +293,6 @@ static AnimatedGif * instance;
 		
 		UIGraphicsBeginImageContext(size);
 		CGContextRef ctx = UIGraphicsGetCurrentContext();
-        CGContextScaleCTM(ctx, 1.0, -1.0);
-        CGContextTranslateCTM(ctx, 0.0, -size.height);
 		
 		int i = 0;
 		AnimatedGifFrame *lastFrame = nil;
@@ -314,7 +312,11 @@ static AnimatedGif * instance;
 						break;
 				}
 			}
+			CGContextSaveGState(ctx);
+			CGContextScaleCTM(ctx, 1.0, -1.0);
+			CGContextTranslateCTM(ctx, 0.0, -size.height);
 			CGContextDrawImage(ctx, rect, image.CGImage);
+			CGContextRestoreGState(ctx);
 			[overlayArray addObject:UIGraphicsGetImageFromCurrentImageContext()];
 			lastFrame = frame;
 			i++;
