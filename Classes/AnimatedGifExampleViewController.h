@@ -13,6 +13,8 @@
 
 	IBOutlet UIImageView *theAnimatedGif;
 	UIImageView *animation;
+	IBOutlet UIImageView *theFirstAnimatedGif, *theSecondAnimatedGif;
+	
 }
 
 @end

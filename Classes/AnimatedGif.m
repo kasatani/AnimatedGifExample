@@ -6,7 +6,7 @@
 //  
 //  Changes on gifdecode:
 //  - Small optimizations (mainly arrays)
-//  - Object Orientated Approach
+//  - Object Orientated Approach (Class Methods as well as Object Methods)
 //  - Added the Graphic Control Extension Frame for transparancy
 //  - Changed header to GIF89a
 //  - Added methods for ease-of-use
@@ -15,6 +15,7 @@
 //
 //  Changelog:
 //
+//	2010-03-16: Added queing mechanism for static class use
 //  2010-01-24: Rework of the entire module, adding static methods, better memory management and URL asynchronous loading
 //  2009-10-08: Added dealloc method, and removed leaks, by Pedro Silva
 //  2009-08-10: Fixed double release for array, by Christian Garbers
@@ -43,11 +44,20 @@
 
 @end
 
+@implementation AnimatedGifQueueObject
+
+@synthesize uiv;
+@synthesize url;
+
+@end
+
+
 @implementation AnimatedGif
 
 static AnimatedGif * instance;
 
 @synthesize imageView;
+@synthesize busyDecoding;
 
 + (AnimatedGif *) sharedInstance
 {
@@ -61,25 +71,57 @@ static AnimatedGif * instance;
 
 + (UIImageView *) getAnimationForGifAtUrl:(NSURL *)animationUrl
 {   
-    [[AnimatedGif sharedInstance] setImageView: [[UIImageView alloc] init]];
     
-    // Asynchronous loading for URL's, else the GUI won't appear untill image is loaded.
-    [[AnimatedGif sharedInstance] performSelector:@selector(asynchronousLoading:) withObject:[animationUrl retain] afterDelay:0.2];
+    AnimatedGifQueueObject *agqo = [[AnimatedGifQueueObject alloc] init];
+    [agqo setUiv: [[UIImageView alloc] init]]; // 2x retain, alloc and the property.
+    [[agqo uiv] autorelease]; // We expect the user to retain the return object.
+    [agqo setUrl: animationUrl]; // this object is only retained by the queueobject, which will be released when loading finishes
+    [[AnimatedGif sharedInstance] addToQueue: agqo];
+    [agqo release];
     
-    return [[AnimatedGif sharedInstance] imageView];
+    if ([[AnimatedGif sharedInstance] busyDecoding] != YES)
+    {
+        [[AnimatedGif sharedInstance] setBusyDecoding: YES];
+        
+        // Asynchronous loading for URL's, else the GUI won't appear until image is loaded.
+        [[AnimatedGif sharedInstance] performSelector:@selector(asynchronousLoading) withObject:nil afterDelay:0.0];
+    }
+    
+    return [agqo uiv];
 }
 
-- (void) asynchronousLoading: (NSURL *) url
+- (void) asynchronousLoading
 {
-    NSData *data = [NSData dataWithContentsOfURL: url];
-    [self decodeGIF: data];
-    UIImageView *tempImageView = [self getAnimation];
-    [imageView setImage: [tempImageView image]];
-    [imageView sizeToFit];
-    [imageView setAnimationImages: [tempImageView animationImages]];
-    [imageView startAnimating];
+    // While we have something in queue.
+	while ([imageQueue count] > 0)
+    {
+    	NSData *data = [NSData dataWithContentsOfURL: [(AnimatedGifQueueObject *) [imageQueue objectAtIndex: 0] url]];
+        imageView = [[imageQueue objectAtIndex: 0] uiv];
+    	[self decodeGIF: data];
+   	 	UIImageView *tempImageView = [self getAnimation];
+   	 	[imageView setImage: [tempImageView image]];
+    	[imageView sizeToFit];
+    	[imageView setAnimationImages: [tempImageView animationImages]];
+    	[imageView startAnimating];
+        
+        [imageQueue removeObjectAtIndex:0];
+    }
     
-    [url release];
+    busyDecoding = NO;
+}
+
+- (void) addToQueue: (AnimatedGifQueueObject *) agqo
+{
+    [imageQueue addObject: agqo];
+}
+
+- (id) init
+{
+    if (self = [super init])
+    {
+        imageQueue = [[NSMutableArray alloc] init];
+    }
+    return self;
 }
 
 // the decoder
@@ -114,10 +156,27 @@ static AnimatedGif * instance;
 	GIF_global = [[NSMutableData alloc] init];
 	GIF_screen = [[NSMutableData alloc] init];
 	GIF_frames = [[NSMutableArray alloc] init];
+        
+	if (GIF_delays != nil)
+    {
+        [GIF_delays release];
+    }
+    
+    if (GIF_framesData != nil)
+    {
+        [GIF_framesData release];
+    }
+        
+    GIF_buffer = [[NSMutableData alloc] init];
+	GIF_global = [[NSMutableData alloc] init];
+	GIF_screen = [[NSMutableData alloc] init];
+	GIF_frameHeader = nil;
+    
+	GIF_delays = [[NSMutableArray alloc] init];
+	GIF_framesData = [[NSMutableArray alloc] init];
 	
-    // Reset file counters to 0 //
+    // Reset file counters to 0
 	dataPointer = 0;
-	frameCounter = 0;
 	
 	[self GIFSkipBytes: 6]; // GIF89a, throw away
 	[self GIFGetBytes: 7]; // Logical Screen Descriptor
@@ -380,7 +439,7 @@ static AnimatedGif * instance;
 	
 	if (aBuffer[8] & 0x80) GIF_colorF = 1; else GIF_colorF = 0;
 	
-	unsigned char GIF_code, GIF_sort;
+	unsigned char GIF_code = GIF_colorC, GIF_sort = GIF_sorted;
 	
 	if (GIF_colorF == 1)
     {
@@ -394,11 +453,6 @@ static AnimatedGif * instance;
         {
         	GIF_sort = 0;
         }
-	}
-    else
-    {
-		GIF_code = GIF_colorC;
-		GIF_sort = GIF_sorted;
 	}
 	
 	int GIF_size = (2 << GIF_code);

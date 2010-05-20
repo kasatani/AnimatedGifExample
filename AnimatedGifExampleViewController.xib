@@ -61,7 +61,17 @@
 					<object class="IBUIImageView" id="378919834">
 						<reference key="NSNextResponder" ref="774585933"/>
 						<int key="NSvFlags">301</int>
-						<string key="NSFrame">{{79, 156}, {160, 158}}</string>
+						<string key="NSFrame">{{0, 156}, {160, 158}}</string>
+						<reference key="NSSuperview" ref="774585933"/>
+						<bool key="IBUIOpaque">NO</bool>
+						<bool key="IBUIClearsContextBeforeDrawing">NO</bool>
+						<int key="IBUIContentMode">4</int>
+						<bool key="IBUIUserInteractionEnabled">NO</bool>
+					</object>
+					<object class="IBUIImageView" id="605359320">
+						<reference key="NSNextResponder" ref="774585933"/>
+						<int key="NSvFlags">301</int>
+						<string key="NSFrame">{{159, 156}, {160, 158}}</string>
 						<reference key="NSSuperview" ref="774585933"/>
 						<bool key="IBUIOpaque">NO</bool>
 						<bool key="IBUIClearsContextBeforeDrawing">NO</bool>
@@ -250,11 +260,19 @@
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchOutletConnection" key="connection">
-						<string key="label">theAnimatedGif</string>
+						<string key="label">theFirstAnimatedGif</string>
 						<reference key="source" ref="372490531"/>
 						<reference key="destination" ref="378919834"/>
 					</object>
-					<int key="connectionID">9</int>
+					<int key="connectionID">20</int>
+				</object>
+				<object class="IBConnectionRecord">
+					<object class="IBCocoaTouchOutletConnection" key="connection">
+						<string key="label">theSecondAnimatedGif</string>
+						<reference key="source" ref="372490531"/>
+						<reference key="destination" ref="605359320"/>
+					</object>
+					<int key="connectionID">21</int>
 				</object>
 				<object class="IBConnectionRecord">
 					<object class="IBCocoaTouchOutletConnection" key="connection">
@@ -297,9 +315,10 @@
 							<reference ref="305793069"/>
 							<reference ref="736844352"/>
 							<reference ref="734578416"/>
-							<reference ref="378919834"/>
 							<reference ref="617156018"/>
 							<reference ref="233814592"/>
+							<reference ref="378919834"/>
+							<reference ref="605359320"/>
 						</object>
 						<reference key="parent" ref="0"/>
 					</object>
@@ -351,6 +370,7 @@
 					<object class="IBObjectRecord">
 						<int key="objectID">19</int>
 						<reference key="object" ref="233814592"/>
+						<reference key="object" ref="605359320"/>
 						<reference key="parent" ref="774585933"/>
 					</object>
 				</object>
@@ -385,7 +405,7 @@
 					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
-					<string>{{430, 244}, {320, 460}}</string>
+					<string>{{687, 244}, {320, 460}}</string>
 					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 					<string>com.apple.InterfaceBuilder.IBCocoaTouchPlugin</string>
 				</object>
@@ -406,7 +426,7 @@
 				</object>
 			</object>
 			<nil key="sourceID"/>
-			<int key="maxID">20</int>
+			<int key="maxID">21</int>
 		</object>
 		<object class="IBClassDescriber" key="IBDocument.Classes">
 			<object class="NSMutableArray" key="referencedPartialClassDescriptions">
@@ -415,8 +435,17 @@
 					<string key="className">AnimatedGifExampleViewController</string>
 					<string key="superclassName">UIViewController</string>
 					<object class="NSMutableDictionary" key="outlets">
-						<string key="NS.key.0">theAnimatedGif</string>
-						<string key="NS.object.0">UIImageView</string>
+						<bool key="EncodedWithXMLCoder">YES</bool>
+						<object class="NSArray" key="dict.sortedKeys">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>theFirstAnimatedGif</string>
+							<string>theSecondAnimatedGif</string>
+						</object>
+						<object class="NSMutableArray" key="dict.values">
+							<bool key="EncodedWithXMLCoder">YES</bool>
+							<string>UIImageView</string>
+							<string>UIImageView</string>
+						</object>
 					</object>
 					<object class="IBClassDescriptionSource" key="sourceIdentifier">
 						<string key="majorKey">IBProjectSource</string>

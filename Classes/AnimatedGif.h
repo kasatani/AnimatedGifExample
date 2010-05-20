@@ -6,7 +6,7 @@
 //  
 //  Changes on gifdecode:
 //  - Small optimizations (mainly arrays)
-//  - Object Orientated Approach
+//  - Object Orientated Approach (Class Methods as well as Object Methods)
 //  - Added the Graphic Control Extension Frame for transparancy
 //  - Changed header to GIF89a
 //  - Added methods for ease-of-use
@@ -15,6 +15,7 @@
 //
 //  Changelog:
 //
+//	2010-03-16: Added queing mechanism for static class use
 //  2010-01-24: Rework of the entire module, adding static methods, better memory management and URL asynchronous loading
 //  2009-10-08: Added dealloc method, and removed leaks, by Pedro Silva
 //  2009-08-10: Fixed double release for array, by Christian Garbers
@@ -50,13 +51,34 @@
 
 @end
 
-@interface AnimatedGif : NSObject {
+@interface AnimatedGifQueueObject : NSObject
+{
+    UIImageView *uiv;
+    NSURL *url;
+}
+
+@property (nonatomic, retain) UIImageView *uiv;
+@property (nonatomic, retain) NSURL *url;
+
+@end
+
+
+@interface AnimatedGif : NSObject
+{
 	NSData *GIF_pointer;
 	NSMutableData *GIF_buffer;
 	NSMutableData *GIF_screen;
 	NSMutableData *GIF_global;
 	NSMutableArray *GIF_frames;
 
+	NSMutableData *GIF_frameHeader;
+	
+	NSMutableArray *GIF_delays;
+	NSMutableArray *GIF_framesData;
+    
+    NSMutableArray *imageQueue;
+	bool busyDecoding;
+	
 	int GIF_sorted;
 	int GIF_colorS;
 	int GIF_colorC;
@@ -64,13 +86,14 @@
 	int animatedGifDelay;
 	
 	int dataPointer;
-	int frameCounter;
     
     UIImageView *imageView;
 }
 
 @property (nonatomic, retain) UIImageView* imageView;
+@property bool busyDecoding;
 
+- (void) addToQueue: (AnimatedGifQueueObject *) agqo;
 + (UIImageView*) getAnimationForGifAtUrl: (NSURL *) animationUrl;
 - (void) decodeGIF:(NSData *)GIF_Data;
 - (void) GIFReadExtensions;
